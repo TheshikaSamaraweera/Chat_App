@@ -1,4 +1,6 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -6,8 +8,6 @@ import java.net.Socket;
 //and respond a new thread to handle them
 public class Server {
     private ServerSocket serverSocket;
-
-    // Reference to ServerUI instance
     private ServerUI serverUI;
 
     public Server(ServerSocket serverSocket, ServerUI serverUI) {
@@ -19,8 +19,9 @@ public class Server {
         try{
             while(!serverSocket.isClosed()){
                 Socket socket = serverSocket.accept();
-                serverUI.appendToDisplay("A new client has connected!"); // Update UI
-                ClientHandler clientHandler = new ClientHandler(socket);
+                String clientName = receiveClientName(socket); // Receive client's name
+                serverUI.appendToDisplay("A new " + clientName + " has connected!"); // Update UI
+                ClientHandler clientHandler = new ClientHandler(socket, clientName); // Pass client's name to ClientHandler
 
                 Thread thread = new Thread(clientHandler);
                 thread.start();
@@ -29,6 +30,10 @@ public class Server {
         catch (IOException e){
             e.printStackTrace();
         }
+    }
+
+    private String receiveClientName(Socket socket) throws IOException {
+        return new BufferedReader(new InputStreamReader(socket.getInputStream())).readLine();
     }
 
     public void closeServerSocket(){

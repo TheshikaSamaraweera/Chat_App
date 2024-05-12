@@ -2,82 +2,72 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 
-//threads using runnable interface
-public class ClientHandler implements Runnable{
-
+public class ClientHandler implements Runnable {
     public static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
     private Socket socket;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
     private String clientUsername;
 
-    public ClientHandler(Socket socket){
-        try{
+    public ClientHandler(Socket socket, String clientUsername) {
+        try {
             this.socket = socket;
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.clientUsername = bufferedReader.readLine();
+            this.clientUsername = clientUsername;
             clientHandlers.add(this);
-            broadcastMessage("SERVER: " + clientUsername + " has entered the chat!");
-
-        }
-        catch (IOException e){
+            broadcastMessage("Member: " + clientUsername + " has entered the chat!");
+        } catch (IOException e) {
             closeEverything(socket, bufferedReader, bufferedWriter);
-
         }
     }
 
-
-    //everything in this run method will run in a seperate thread
     @Override
     public void run() {
         String messageFromClient;
-        while(socket.isConnected()){
-            try{
+        while (socket.isConnected()) {
+            try {
                 messageFromClient = bufferedReader.readLine();
                 broadcastMessage(messageFromClient);
-            }
-            catch (IOException e){
-                closeEverything(socket, bufferedReader,bufferedWriter);
+            } catch (IOException e) {
+                closeEverything(socket, bufferedReader, bufferedWriter);
                 break;
             }
         }
     }
 
-    public void broadcastMessage(String messageToSend){
-        for(ClientHandler clientHandler : clientHandlers){
-            try{
-                if(!clientHandler.clientUsername.equals(clientUsername)){
+    public void broadcastMessage(String messageToSend) {
+        for (ClientHandler clientHandler : clientHandlers) {
+            try {
+                if (!clientHandler.clientUsername.equals(clientUsername)) {
                     clientHandler.bufferedWriter.write(messageToSend);
                     clientHandler.bufferedWriter.newLine();
                     clientHandler.bufferedWriter.flush();
                 }
-            }
-            catch (IOException e){
-                closeEverything(socket, bufferedReader,bufferedWriter);
+            } catch (IOException e) {
+                closeEverything(socket, bufferedReader, bufferedWriter);
             }
         }
     }
 
-    public  void removeClientHandler(){
+    public void removeClientHandler() {
         clientHandlers.remove(this);
         broadcastMessage("SERVER: " + clientUsername + " has left the chat!");
     }
 
-    public void closeEverything(Socket socket,BufferedReader bufferedReader, BufferedWriter bufferedWriter){
+    public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
         removeClientHandler();
-        try{
-            if(bufferedReader != null ){
+        try {
+            if (bufferedReader != null) {
                 bufferedReader.close();
             }
-            if(bufferedWriter != null ){
+            if (bufferedWriter != null) {
                 bufferedWriter.close();
             }
-            if(socket != null ){
+            if (socket != null) {
                 socket.close();
             }
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
